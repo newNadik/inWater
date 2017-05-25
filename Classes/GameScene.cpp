@@ -34,9 +34,41 @@ bool GameScene::init()
                                    winSize.height / backgroundSprite->getContentSize().height));
     this->addChild(backgroundSprite);
 
+    ///corpuse
+    corpuseLayer = Layer::create();
+    corpuseLayer->setPosition(Vec2::ZERO);
+    this->addChild(corpuseLayer, 5);
+
+    Sprite *bottomPart = Sprite::create("bot.png");
+    bottomPart->setPosition(Vec2(bottomPart->getContentSize().width*0.5f,
+                                 bottomPart->getContentSize().height*0.5f));
+    auto controllsBody = PhysicsBody::createEdgeBox( bottomPart->getBoundingBox().size, PHYSICSBODY_MATERIAL_DEFAULT);
+    controllsBody->setCategoryBitmask(GAME_BORDER);
+    controllsBody->setCollisionBitmask(ITEM);
+    bottomPart->setPhysicsBody( controllsBody );
+    corpuseLayer->addChild(bottomPart);
+
+    Sprite *topPart = Sprite::create("top.png");
+    topPart->setPosition(Vec2(topPart->getContentSize().width*0.5f,
+                              winSize.height - topPart->getContentSize().height*0.5f));
+    corpuseLayer->addChild(topPart);
+
+    Sprite *midPart = Sprite::create("mid.png");
+    midPart->setAnchorPoint(Vec2::ANCHOR_MIDDLE_TOP);
+    midPart->setScaleY((topPart->getBoundingBox().getMinY() -
+            bottomPart->getBoundingBox().getMaxY()) / midPart->getContentSize().height);
+    midPart->setPosition(Vec2(topPart->getContentSize().width*0.5f,
+                              winSize.height - topPart->getContentSize().height));
+    corpuseLayer->addChild(midPart);
+
+    Sprite *logo = Sprite::create("logo.png");
+    logo->setPosition(Vec2(winSize.width*0.5f, inWaterLogoYpos));
+    corpuseLayer->addChild(logo, 1);
+
+    ///Controllers
     controlersLayer = Layer::create();
     controlersLayer->setPosition(Vec2::ZERO);
-    this->addChild(controlersLayer, 5);
+    this->addChild(controlersLayer, 6);
 
     auto edgeBody = PhysicsBody::createEdgeBox( visibleSize, PHYSICSBODY_MATERIAL_DEFAULT, 3 );
     edgeBody->setCategoryBitmask(BOUNDARY);
@@ -46,12 +78,42 @@ bool GameScene::init()
     edgeNode->setPhysicsBody( edgeBody );
     this->addChild( edgeNode );
 
-    Sprite *rightBtnForeground = Sprite::create("rightBtnForeground.png");
-    rightBtnForeground->setPosition(rightButtonPosition);
-    controlersLayer->addChild(rightBtnForeground, 2);
+    ///buttons
+    Sprite *leftBtnBack = Sprite::create("bigButtonShadow.png");
+    leftBtnBack->setPosition(Vec2(buttonsCenterPosition, buttonsCenterPosition));
+    controlersLayer->addChild(leftBtnBack, 1);
 
-    rightButton = Button::create("rightBtn.png", "rightBtn.png","rightBtn.png");
-    rightButton->setPosition(rightButtonPosition);
+    leftButton = Button::create("bigButton.png", "bigButton.png","bigButton.png");
+    leftButton->setPosition(leftBtnBack->getPosition());
+    leftButton->addTouchEventListener( [this](Ref* pSender, Widget::TouchEventType type) {
+        switch (type){
+            case Widget::TouchEventType::BEGAN:{
+                ((Button*)pSender)->setTag(1);
+                this->scheduleUpdate();
+                break;
+            }
+            case Widget::TouchEventType::CANCELED:{
+                this->unscheduleUpdate();
+                ((Button*)pSender)->setTag(0);
+                ((Button*)pSender)->runAction(ScaleTo::create(0.2f, 1.0f));
+                break;}
+            case Widget::TouchEventType::ENDED:{
+                this->unscheduleUpdate();
+                ((Button*)pSender)->setTag(0);
+                ((Button*)pSender)->runAction(ScaleTo::create(0.2f, 1.0f));
+                break;}
+            default: break;
+
+        }
+    });
+    controlersLayer->addChild(leftButton, 1);
+
+    Sprite *rightBtnBack = Sprite::create("bigButtonShadow.png");
+    rightBtnBack->setPosition(Vec2(winSize.width - buttonsCenterPosition, buttonsCenterPosition));
+    controlersLayer->addChild(rightBtnBack, 1);
+
+    rightButton = Button::create("bigButton.png", "bigButton.png","bigButton.png");
+    rightButton->setPosition(rightBtnBack->getPosition());
     rightButton->addTouchEventListener( [this](Ref* pSender, Widget::TouchEventType type) {
         switch (type){
             case Widget::TouchEventType::BEGAN:{
@@ -62,12 +124,12 @@ bool GameScene::init()
             case Widget::TouchEventType::CANCELED:{
                 this->unscheduleUpdate();
                 ((Button*)pSender)->setTag(0);
-                ((Button*)pSender)->runAction(MoveTo::create(0.2f, rightButtonPosition));
+                ((Button*)pSender)->runAction(ScaleTo::create(0.2f, 1.0f));
                 break;}
             case Widget::TouchEventType::ENDED:{
                 this->unscheduleUpdate();
                 ((Button*)pSender)->setTag(0);
-                ((Button*)pSender)->runAction(MoveTo::create(0.2f, rightButtonPosition));
+                ((Button*)pSender)->runAction(ScaleTo::create(0.2f, 1.0f));
                 break;}
             default: break;
 
@@ -75,19 +137,35 @@ bool GameScene::init()
     });
     controlersLayer->addChild(rightButton, 1);
 
-    LayerColor *controllsBack = LayerColor::create(lightBlue, winSize.width, rightBtnForeground->getBoundingBox().getMaxY());
-    auto controllsBody = PhysicsBody::createEdgeBox( controllsBack->getBoundingBox().size, PHYSICSBODY_MATERIAL_DEFAULT);
-    controllsBody->setCategoryBitmask(GAME_BORDER);
-    controllsBody->setCollisionBitmask(ITEM);
-    controllsBack->setPhysicsBody( controllsBody );
-    controlersLayer->addChild(controllsBack, 0);
+    vibrButton = Button::create("vibroff_normal.png", "vibroff_pressed.png","vibroff_pressed.png");
+    vibrButton->setPosition(vibrButtonPos);
+    vibrButton->addTouchEventListener( [this](Ref* pSender, Widget::TouchEventType type) {
+        switch (type){
+            case Widget::TouchEventType::ENDED:{
+                break;}
+            default: break;
+        }
+    });
+    controlersLayer->addChild(vibrButton, 1);
+
+    soundButton = Button::create("soundoff_normal.png", "soundoff_pressed.png","soundoff_pressed.png");
+    soundButton->setPosition(soundButtonPos);
+    soundButton->addTouchEventListener( [this](Ref* pSender, Widget::TouchEventType type) {
+        switch (type){
+            case Widget::TouchEventType::ENDED:{
+                break;}
+            default: break;
+        }
+    });
+    controlersLayer->addChild(soundButton, 1);
+
     addStars(5);
     return true;
 }
 void GameScene::update(float dt) {
     if((int)dt%1 == 0){
         if(rightButton->getTag() > 0 && rightButton->getTag() < 7){
-            rightButton->runAction(MoveBy::create(0.01f, Vec2(-1, 4)));
+            rightButton->runAction(ScaleBy::create(0.01f, -0.01f));// MoveBy::create(0.01f, Vec2(-1, 4)));
             makeBubbles(rightButton);
             Device::vibrate(0.1f);
             rightButton->setTag(rightButton->getTag()+1);
