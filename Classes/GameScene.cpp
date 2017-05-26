@@ -34,6 +34,8 @@ bool GameScene::init()
                                    winSize.height / backgroundSprite->getContentSize().height));
     this->addChild(backgroundSprite);
 
+    
+    //90 230 85
     ///corpuse
     corpuseLayer = Layer::create();
     corpuseLayer->setPosition(Vec2::ZERO);
@@ -86,21 +88,22 @@ bool GameScene::init()
     leftButton = Button::create("bigButton.png", "bigButton.png","bigButton.png");
     leftButton->setPosition(leftBtnBack->getPosition());
     leftButton->addTouchEventListener( [this](Ref* pSender, Widget::TouchEventType type) {
+        Button *senderButton = (Button*)pSender;
         switch (type){
             case Widget::TouchEventType::BEGAN:{
-                ((Button*)pSender)->setTag(1);
+                senderButton->setTag(1);
                 this->scheduleUpdate();
                 break;
             }
             case Widget::TouchEventType::CANCELED:{
                 this->unscheduleUpdate();
-                ((Button*)pSender)->setTag(0);
-                ((Button*)pSender)->runAction(ScaleTo::create(0.2f, 1.0f));
+                senderButton->setTag(0);
+                senderButton->runAction(ScaleTo::create(0.2f, 1.0f));
                 break;}
             case Widget::TouchEventType::ENDED:{
                 this->unscheduleUpdate();
-                ((Button*)pSender)->setTag(0);
-                ((Button*)pSender)->runAction(ScaleTo::create(0.2f, 1.0f));
+                senderButton->setTag(0);
+                senderButton->runAction(ScaleTo::create(0.2f, 1.0f));
                 break;}
             default: break;
 
@@ -113,23 +116,25 @@ bool GameScene::init()
     controlersLayer->addChild(rightBtnBack, 1);
 
     rightButton = Button::create("bigButton.png", "bigButton.png","bigButton.png");
-    rightButton->setPosition(rightBtnBack->getPosition());
+    rightButton->setAnchorPoint(Vec2::ANCHOR_TOP_LEFT);
+    rightButton->setPosition(Vec2(rightBtnBack->getBoundingBox().getMinX(), rightBtnBack->getBoundingBox().getMaxY()));
     rightButton->addTouchEventListener( [this](Ref* pSender, Widget::TouchEventType type) {
+        Button *senderButton = (Button*)pSender;
         switch (type){
             case Widget::TouchEventType::BEGAN:{
-                ((Button*)pSender)->setTag(1);
+                senderButton->setTag(1);
                 this->scheduleUpdate();
                 break;
             }
             case Widget::TouchEventType::CANCELED:{
                 this->unscheduleUpdate();
-                ((Button*)pSender)->setTag(0);
-                ((Button*)pSender)->runAction(ScaleTo::create(0.2f, 1.0f));
+                senderButton->setTag(0);
+                senderButton->runAction(ScaleTo::create(0.2f, 1.0f));
                 break;}
             case Widget::TouchEventType::ENDED:{
                 this->unscheduleUpdate();
-                ((Button*)pSender)->setTag(0);
-                ((Button*)pSender)->runAction(ScaleTo::create(0.2f, 1.0f));
+                senderButton->setTag(0);
+                senderButton->runAction(ScaleTo::create(0.2f, 1.0f));
                 break;}
             default: break;
 
@@ -137,22 +142,43 @@ bool GameScene::init()
     });
     controlersLayer->addChild(rightButton, 1);
 
-    vibrButton = Button::create("vibroff_normal.png", "vibroff_pressed.png","vibroff_pressed.png");
+    vibrButton = Button::create("vibron_normal.png", "vibron_pressed.png","vibron_pressed.png");
+    if(!UserDefault::getInstance()->getBoolForKey("kVibrationEnabled", true))
+        vibrButton->loadTextures("vibroff_normal.png", "vibroff_pressed.png");
+    
     vibrButton->setPosition(vibrButtonPos);
     vibrButton->addTouchEventListener( [this](Ref* pSender, Widget::TouchEventType type) {
+        Button *senderButton = (Button*)pSender;
         switch (type){
             case Widget::TouchEventType::ENDED:{
+                if(UserDefault::getInstance()->getBoolForKey("kVibrationEnabled", true)){
+                    senderButton->loadTextures("vibroff_normal.png", "vibroff_pressed.png");
+                    UserDefault::getInstance()->setBoolForKey("kVibrationEnabled", false);
+                } else {
+                    senderButton->loadTextures("vibron_normal.png", "vibron_pressed.png");
+                    UserDefault::getInstance()->setBoolForKey("kVibrationEnabled", true);
+                }
                 break;}
             default: break;
         }
     });
     controlersLayer->addChild(vibrButton, 1);
 
-    soundButton = Button::create("soundoff_normal.png", "soundoff_pressed.png","soundoff_pressed.png");
+    soundButton = Button::create("soundon_normal.png", "soundon_pressed.png","soundon_pressed.png");
+    if(!UserDefault::getInstance()->getBoolForKey("kSoundEnabled", true))
+        vibrButton->loadTextures("soundoff_normal.png", "soundoff_pressed.png");
     soundButton->setPosition(soundButtonPos);
     soundButton->addTouchEventListener( [this](Ref* pSender, Widget::TouchEventType type) {
+        Button *senderButton = (Button*)pSender;
         switch (type){
             case Widget::TouchEventType::ENDED:{
+                if(UserDefault::getInstance()->getBoolForKey("kSoundEnabled", true)){
+                    senderButton->loadTextures("soundoff_normal.png", "soundoff_pressed.png");
+                    UserDefault::getInstance()->setBoolForKey("kSoundEnabled", false);
+                } else {
+                    senderButton->loadTextures("soundon_normal.png", "soundon_pressed.png");
+                    UserDefault::getInstance()->setBoolForKey("kSoundEnabled", true);
+                }
                 break;}
             default: break;
         }
@@ -165,10 +191,11 @@ bool GameScene::init()
 void GameScene::update(float dt) {
     if((int)dt%1 == 0){
         if(rightButton->getTag() > 0 && rightButton->getTag() < 7){
-            rightButton->runAction(ScaleBy::create(0.01f, -0.01f));// MoveBy::create(0.01f, Vec2(-1, 4)));
-            makeBubbles(rightButton);
-            Device::vibrate(0.1f);
             rightButton->setTag(rightButton->getTag()+1);
+            rightButton->runAction(ScaleTo::create(0.1f, (1 - rightButton->getTag() * 0.01f)));// MoveBy::create(0.01f, Vec2(-1, 4)));
+            makeBubbles(rightButton);
+            if(UserDefault::getInstance()->getBoolForKey("kVibration", true))
+                Device::vibrate(0.1f);
         }
     }
 }
