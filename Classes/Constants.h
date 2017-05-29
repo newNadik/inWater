@@ -3,9 +3,10 @@ using namespace cocos2d;
 
 #define winSize Director::getInstance()->getWinSize()
 #define visibleSize Director::getInstance()->getVisibleSize()
-//blue - 0, 174, 240
-#define lightBlue Color4B(0, 174, 240, 255)
 
+#define lightBlue Color4B(0, 174, 240, 255)
+#define  VIBRATION_ENABLED "kVibrationEnabled"
+#define  SOUND_ENABLED "kSoundEnabled"
 enum CategoryBitMask {
     BOUNDARY =          0x0001,
     GAME_BORDER =       0x0002,
