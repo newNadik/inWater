@@ -228,6 +228,7 @@ void GameScene::addStars(int count){
 
         Physics3DRigidBodyDes roboxDesxs;
         roboxDesxs.mass = 10.0f;
+        roboxDesxs.disableSleep = true;
         float itemScale = 100.0f;
         auto robox = Sprite3D::create("test.obj");
         robox->setScale(itemScale);
